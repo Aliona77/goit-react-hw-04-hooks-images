@@ -21,7 +21,7 @@ export function ImageGallery({ imageGalleryList, alt, handleClick }) {
   )
 }
 ImageGallery.propTypes = {
-  images: PropTypes.array.isRequired,
+  imageGalleryList: PropTypes.array.isRequired,
 };
 
 

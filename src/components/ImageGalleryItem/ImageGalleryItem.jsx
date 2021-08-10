@@ -1,3 +1,4 @@
+  
 import { ImageGalleryItemList, Image} from './ImageGalleryItem.styles';
 import PropTypes from 'prop-types';
 
@@ -25,5 +26,5 @@ ImageGalleryItem.propTypes = {
     largeImageURL: PropTypes.string,
   }).isRequired,
     alt: PropTypes.string.isRequired,
-  onImageClick: PropTypes.func.isRequired,
+ handleClick: PropTypes.func.isRequired,
 };

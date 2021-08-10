@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import LoaderSpin from './components/Loader/Loader.jsx';
 import toast, { Toaster } from 'react-hot-toast';
 import imagesApi from './servises/Api';
@@ -8,40 +8,58 @@ import { Button } from './components/Button/Button';
 import { Modal } from './components/Modal/Modal';
 import { Container } from './App.styles';
 
-export const App = () =>{}
+
+export default function App() {
+  const [imageName, setImageName] = useState('');
+  const [imageGalleryList, setImageGalleryList] = useState([]);
+  const [showModal, setShowModal] = useState(null);
+  const [imgUrl, setImgUrl] = useState('');
+  const [page, setPage] = useState(1);
+  const [reqStatus, setReqStatus] = useState('idle');
 
 
-export class App extends Component {
-  state = {
-    imageName: '',
-    imageGalleryList: [],
-    showModal: null,
-    imgUrl: '',
-    page: 1,
-    reqStatus: 'idle',
-  };
 
-  componentDidUpdate(_, prevState) {
-    const { imageName, imageGalleryList } = this.state;
+useEffect(() => {
+  if (!imageName) return;
+  setReqStatus('pending');
 
-    if (prevState.imageName !== imageName) {
-      this.setState({ imageGalleryList: [], page: 1 });
-      this.handleSearch();
-    }
-    if (
-      prevState.imageGalleryList !== imageGalleryList &&
-      prevState.imageGalleryList.length !== 0
-    ) {
-      this.handleScroll();
-    }
-  }
-
-  handleFormSubmit = imageName => {
-    if (imageName.trim() !== '') {
-      this.setState({ imageName });
+  imagesApi.fetchImages(imageName, page).then(data => {
+    if (data.length === 0 && page === 1) {
+      toast.error('Ведите запрос');
+      setReqStatus('idle');
       return;
     }
-    toast.error('Ведите запрос');
+    if (data.length === 0 && page > 1) {
+      toast.error('Картинок нет');
+      setReqStatus('idle');
+      return;
+    }
+    const images = data.map(({ id, webformatURL, largeImageURL }) => ({
+      id,
+      webformatURL,
+      largeImageURL,
+    }));
+   
+    setImageGalleryList(prev => [...prev, ...images]);
+    setReqStatus('resolved'),
+    });
+  
+}, [page, imageName]);
+
+useEffect(() => {
+  if (imageGalleryList.length <= PER_PAGE) return;
+  handleScroll();
+}, [imageGalleryList]);
+
+
+ const handleFormSubmit = imageName => {
+    if (imageName.trim() !== '') {
+      setPage(1);
+    setImageGalleryList([]);
+        setImageName(imageName)
+      return;
+    }
+    toast.error('Ваш запрос не дал результатов');
   };
 
   handleSearch = () => {
@@ -52,71 +70,49 @@ export class App extends Component {
       .fetchImages(imageName, page)
       .then(imagesData => this.handleSearchData(imagesData));
   };
-  handleSearchData = data => {
-    const { page } = this.state;
-
-    if (data.length === 0 && page === 1) {
-      toast.error('Ваш запрос не дал результатов');
-      this.setState({ reqStatus: 'idle' });
-      return;
-    }
-    if (data.length === 0 && page > 1) {
-      toast.error('Картинок нет');
-      this.setState({ reqStatus: 'idle' });
-      return;
-    }
-    const images = data.map(({ id, webformatURL, largeImageURL }) => ({
-      id,
-      webformatURL,
-      largeImageURL,
-    }));
-
-    this.setState(prevState => ({
-      imageGalleryList: [...prevState.imageGalleryList, ...images],
-      page: prevState.page + 1,
-      reqStatus: 'resolved',
-    }));
-  };
-  handleScroll = () => {
+   
+ const handleScroll = () => {
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: 'smooth',
     });
   };
-  toggleModal = e => {
+  const toggleModal = e => {
     if (e.target === e.currentTarget || e.code === 'Escape') {
-      this.setState(({ showModal }) => ({ showModal: !showModal }));
+      setShowModal(prev => !prev);
     }
   };
 
-  handleClickImages = (e, url) => {
-    this.setState({ imgUrl: url });
-    this.toggleModal(e);
+const  handleClickImages = (e, url) => {
+    setImgUrl(url);
+    toggleModal(e);
   };
 
-  render() {
-    const { imageGalleryList, imageName, reqStatus, showModal, imgUrl } =
-      this.state;
+  
     return (
       <Container>
-        <Searchbar onSubmit={this.handleFormSubmit} />
+        <Searchbar onSubmit={handleFormSubmit} />
         {imageGalleryList.length > 0 && (
           <ImageGallery
             imageGalleryList={imageGalleryList}
             alt={imageName}
-            handleClick={this.handleClickImages}
+            handleClick={handleClickImages}
           />
         )}
         {reqStatus === 'pending' && <LoaderSpin />}
         {reqStatus === 'resolved' && (
-          <Button onClick={this.handleSearch} />
+          <Button onClick={()=> setPage(prev = prev+1)} />
         )}
         {showModal && (
-          <Modal alt={imageName} url={imgUrl} closeModal={this.toggleModal} />
+          <Modal alt={imageName} url={imgUrl} closeModal={toggleModal} />
         )}
-        <Toaster />
+        <Toaster position="top-right"/>
       </Container>
     );
   }
-}
-export default App;
+
+
+
+
+
+
