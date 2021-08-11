@@ -16,10 +16,8 @@ export default function Modal({ alt, url, closeModal }) {
 
   
     window.addEventListener('keydown', handleKeyDown);
-    console.log("addEventListener");
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      console.log("removeEventListener");
     }
   }, [closeModal]);
 
